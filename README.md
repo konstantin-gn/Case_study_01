@@ -32,11 +32,13 @@ To look up the installed libraries use this command:
 pip list
 ```
 
-# Start Venv
-command: .venv/Scripts/activate
-
-# Start Mockup
-command: streamlit run mockup_ui.py
+# Start script
+## Start mockup
+Make sure you are in the project-folder and open a terminal.
+Use this command to start the mockup:
+´´´
+streamlit run mockup_ui.py
+´´´
 
 # Screenshot Mockup
 ![Mockup](Screenshot_Mockup.png)
