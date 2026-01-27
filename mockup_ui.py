@@ -1,5 +1,8 @@
 import streamlit as st
-import database as db
+from users import User
+from devices import Device
+
+
 
 # --------------------------------------------------
 # Mockup UI for Case Study I
@@ -9,6 +12,9 @@ import database as db
 st.set_page_config(page_title="Geräteverwaltung – Mockup", layout="wide")
 
 # -------- Session State Placeholder --------
+if "user_mode" not in st.session_state:
+    st.session_state.user_mode = None  # None | "add" | "delete"
+
 if "current_device" not in st.session_state:
     st.session_state.current_device = "CLETSCHI"
 
@@ -44,21 +50,21 @@ if page == "Dashboard":
 elif page == "Geräteverwaltung":
     st.title("Geräteverwaltung")
 
-    # ---------------- Geräteliste ----------------
-    results = db.read_table("device")
 
-    st.subheader("Geräteliste (Platzhalter)")
-    if results:
-        st.table(
-            {
-                "Name": [d["name"] for d in results],
-                "Status": [d["status"] for d in results],
-                "Beschreibung": [d["description"] for d in results],
-            }
-        )
+    # ---------------- Geräteliste ----------------
+    devices = Device.find_all()
+
+    st.subheader("Geräteliste")
+
+    if devices:
+        st.table({
+            "Geräte-ID": [d.id for d in devices],
+            "Verwaltet von": [d.managed_by_user_id for d in devices],
+            "Aktiv": [d.is_active for d in devices],
+            "End of Life": [d.end_of_life for d in devices],
+        })
     else:
         st.info("Noch keine Geräte vorhanden.")
-
     # ---------------- Buttons (nebeneinander) ----------------
     col1, col2, col3 = st.columns(3)
 
@@ -67,10 +73,6 @@ elif page == "Geräteverwaltung":
             st.session_state.device_mode = "add"
             st.rerun()
 
-    with col2:
-        if st.button("Gerät ändern"):
-            st.session_state.device_mode = "edit"
-            st.rerun()
 
     with col3:
         if st.button("Gerät löschen"):
@@ -80,94 +82,46 @@ elif page == "Geräteverwaltung":
     st.divider()
 
     # ================= GERÄT ANLEGEN =================
-    if st.session_state.device_mode == "add":
+    
+    if st.session_state.get("device_mode") == "add":
         st.subheader("Neues Gerät anlegen")
 
-        name = st.text_input("Gerätename", key="add_name")
-        status = st.selectbox(
-            "Status",
-            ["verfügbar", "reserviert", "in Wartung"],
-            key="add_status",
+        device_id = st.text_input("Geräte-ID")
+        users = User.find_all()
+
+        managed_by = st.selectbox(
+            "Verantwortlicher Nutzer",
+            options=users,
+            format_func=lambda u: f"{u.name} ({u.id})"
         )
-        description = st.text_area("Beschreibung", key="add_desc")
 
         if st.button("Gerät speichern"):
-            if name.strip():
-                db.safe_device(name.strip(), status, description.strip())
-                st.success("Gerät wurde angelegt.")
-                st.session_state.device_mode = None
-                st.rerun()
-            else:
-                st.error("Bitte einen Gerätenamen eingeben.")
-
-    # ================= GERÄT ÄNDERN =================
-    elif st.session_state.device_mode == "edit":
-        st.subheader("Gerät auswählen")
-
-        if not results:
-            st.warning("Keine Geräte vorhanden.")
-            st.stop()
-
-        selected_device = st.selectbox(
-            "Vorhandene Geräte",
-            options=results,
-            format_func=lambda d: d.get("name", "Unbenannt"),
-        )
-
-        st.subheader("Gerätedetails bearbeiten")
-
-        edit_name = st.text_input(
-            "Gerätename",
-            value=selected_device.get("name", ""),
-            key="edit_name",
-        )
-
-        statuses = ["verfügbar", "reserviert", "in Wartung"]
-        edit_status = st.selectbox(
-            "Status",
-            statuses,
-            index=statuses.index(
-                selected_device.get("status", "verfügbar")
-            ),
-            key="edit_status",
-        )
-
-        edit_description = st.text_area(
-            "Beschreibung",
-            value=selected_device.get("description", ""),
-            key="edit_description",
-        )
-
-        if st.button("Änderungen speichern"):
-            if edit_name.strip():
-                db.update_device_by_doc_id(
-                    selected_device.doc_id,
-                    edit_name.strip(),
-                    edit_status,
-                    edit_description.strip(),
+            if device_id.strip():
+                device = Device(
+                    id=device_id.strip(),
+                    managed_by_user_id=managed_by.id
                 )
-                st.success("Änderungen wurden gespeichert.")
-                st.session_state.device_mode = None
+                device.store_data()
+                st.success("Gerät wurde angelegt.")
                 st.rerun()
             else:
-                st.error("Der Gerätename darf nicht leer sein.")
+                st.error("Bitte eine Geräte-ID eingeben.")
+
 
     # ================= GERÄT LÖSCHEN =================
-    elif st.session_state.device_mode == "delete":
+    elif st.session_state.get("device_mode") == "delete":
         st.subheader("Gerät löschen")
 
-        if not results:
-            st.warning("Keine Geräte zum Löschen vorhanden.")
-            st.stop()
+        devices = Device.find_all()
 
         selected_device = st.selectbox(
-            "Zu löschendes Gerät auswählen",
-            options=results,
-            format_func=lambda d: d.get("name", "Unbenannt"),
+            "Gerät auswählen",
+            options=devices,
+            format_func=lambda d: d.id
         )
 
         st.warning(
-            f"⚠️ Das Gerät **{selected_device.get('name')}** wird unwiderruflich gelöscht."
+            f" Das Gerät **{selected_device.id}** wird unwiderruflich gelöscht."
         )
 
         confirm = st.checkbox(
@@ -176,25 +130,26 @@ elif page == "Geräteverwaltung":
 
         if st.button("Gerät endgültig löschen"):
             if confirm:
-                db.delete_device_by_doc_id(selected_device.doc_id)
+                selected_device.delete()
                 st.success("Gerät wurde gelöscht.")
                 st.session_state.device_mode = None
                 st.rerun()
             else:
                 st.error("Bitte bestätige das Löschen mit der Checkbox.")
 
-elif page == "Nutzerverwaltung":
-    st.title("Nutzerverwaltung")
+
 
     # ---------------- Nutzerliste ----------------
-    users = db.read_users()
+elif page == "Nutzerverwaltung":
+    st.title("Nutzerverwaltung")
+    users = User.find_all()
 
     st.subheader("Nutzerliste")
     if users:
         st.table(
             {
-                "Name": [u["name"] for u in users],
-                "Rolle": [u["role"] for u in users],
+                "Name": [u.name for u in users],
+                "E-mail": [u.id for u in users],
             }
         )
     else:
@@ -219,17 +174,22 @@ elif page == "Nutzerverwaltung":
     if st.session_state.get("user_mode") == "add":
         st.subheader("Neuen Nutzer anlegen")
 
-        name = st.text_input("Name", key="user_add_name")
-        role = st.selectbox("Rolle", ["Admin", "User"], key="user_add_role")
+        name = st.text_input("Name")
+        email = st.text_input("E-Mail")
 
         if st.button("Nutzer speichern"):
-            if name.strip():
-                db.save_user(name.strip(), role)
+            if name.strip() and email.strip():
+                user = User(
+                    id=email.strip().lower(),
+                    name=name.strip()
+                )
+                user.store_data()
+
                 st.success("Nutzer wurde angelegt.")
                 st.session_state.user_mode = None
                 st.rerun()
             else:
-                st.error("Bitte einen Namen eingeben.")
+                st.error("Name und E-Mail müssen ausgefüllt sein.")
 
     # ================= NUTZER LÖSCHEN =================
     elif st.session_state.get("user_mode") == "delete":
@@ -242,11 +202,11 @@ elif page == "Nutzerverwaltung":
         selected_user = st.selectbox(
             "Zu löschenden Nutzer auswählen",
             options=users,
-            format_func=lambda u: u.get("name", "Unbenannt"),
+            format_func=lambda u: f"{u.name} ({u.id})",
         )
 
         st.warning(
-            f"⚠️ Der Nutzer **{selected_user.get('name')}** wird unwiderruflich gelöscht."
+            f" Der Nutzer **{selected_user.name}** wird unwiderruflich gelöscht."
         )
 
         confirm = st.checkbox(
@@ -255,7 +215,7 @@ elif page == "Nutzerverwaltung":
 
         if st.button("Nutzer endgültig löschen"):
             if confirm:
-                db.delete_user_by_doc_id(selected_user.doc_id)
+                selected_user.delete()
                 st.success("Nutzer wurde gelöscht.")
                 st.session_state.user_mode = None
                 st.rerun()
