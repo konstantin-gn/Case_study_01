@@ -1,6 +1,7 @@
 import streamlit as st
 from users import User
 from devices import Device
+from reservation import Reservation
 
 
 
@@ -32,7 +33,7 @@ page = st.sidebar.radio(
         "Dashboard",
         "Geräteverwaltung",
         "Nutzerverwaltung",
-        "Reservierungen (Mockup)",
+        "Reservierungen",
         "Wartung (Mockup)",
     ],
 )
@@ -222,16 +223,106 @@ elif page == "Nutzerverwaltung":
             else:
                 st.error("Bitte bestätige das Löschen mit der Checkbox.")
 
-elif page == "Reservierungen (Mockup)":
+
+# ================= RESERVIERUNGEN =================
+if "reservation_mode" not in st.session_state:
+    st.session_state.reservation_mode = None  # None | "add" | "delete"
+
+elif page == "Reservierungen":
     st.title("Reservierungen")
-    st.warning("Reservierungslogik wird in Case Study II umgesetzt.")
+    
+    reservations = Reservation.find_all()
+    devices = Device.find_all()
+    users = User.find_all()
 
-    st.selectbox("Gerät auswählen", ["Laptop", "Tablet", "Beamer"])
-    st.selectbox("Nutzer auswählen", ["Max Mustermann", "Erika Musterfrau"])
-    st.date_input("Startdatum")
-    st.date_input("Enddatum")
-    st.button("Reservierung anlegen (Mockup)")
+    st.subheader("Aktive Reservierungen")
 
+    if reservations:
+        st.table({
+            "Nutzer": [r.user_id for r in reservations],
+            "Gerät": [r.device_id for r in reservations],
+            "Startdatum": [r.start_date for r in reservations],
+            "Enddatum": [r.end_date for r in reservations],
+        })
+    else:
+        st.info("Noch keine Reservierungen vorhanden.")
+
+    # ---------------- Buttons (nebeneinander) ----------------    
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("Reservierung anlegen"):
+            st.session_state.reservation_mode = "add"
+            st.rerun()
+
+    with col2:
+        if st.button("Reservierung löschen"):
+            st.session_state.reservation_mode = "delete"
+            st.rerun()
+
+    st.divider()
+
+    # ================= RESERVIERUNG ANLEGEN =================
+
+    if st.session_state.reservation_mode == "add":
+        st.subheader("Neue Reservierung anlegen")
+
+        selected_device = st.selectbox(
+            "Gerät auswählen",
+            options=devices,
+            format_func=lambda d: d.id
+        )
+
+        selected_user = st.selectbox(
+            "Nutzer auswählen",
+            options=users,
+            format_func=lambda u: f"{u.name} ({u.id})"
+        )
+
+        start_date = st.date_input("Startdatum")
+        end_date = st.date_input("Enddatum")
+
+        if st.button("Reservierung speichern"):
+            if start_date > end_date:
+                st.error("Enddatum muss nach dem Startdatum liegen.")
+            else:
+                reservation = Reservation(
+                    id=f"{selected_device.id}-{start_date}",
+                    device_id=selected_device.id,
+                    user_id=selected_user.id,
+                    start_date=start_date,
+                    end_date=end_date,
+                )
+                reservation.store_data()
+
+                st.success("Reservierung wurde angelegt.")
+                st.session_state.reservation_mode = None
+                st.rerun()
+
+    # ================= RESERVIERUNG LÖSCHEN =================
+
+    elif st.session_state.reservation_mode == "delete":
+        st.subheader("Reservierung löschen")
+
+    selected_reservation = st.selectbox(
+        "Reservierung auswählen",
+        options=reservations,
+        format_func=lambda r: f"{r.device_id} | {r.start_date} – {r.end_date}"
+    )
+
+    confirm = st.checkbox("Ich bestätige das Löschen")
+
+    if st.button("Reservierung entgültig löschen"):
+        if confirm:
+            selected_reservation.delete()
+            st.success("Reservierung gelöscht.")
+            st.session_state.reservation_mode = None
+            st.rerun()
+        else:
+            st.error("Bitte bestätige das Löschen.")
+
+
+# ================= WARTUNG MOCKUP =================
 elif page == "Wartung (Mockup)":
     st.title("Wartung")
     st.warning("Wartungsverwaltung ist noch nicht implementiert.")
