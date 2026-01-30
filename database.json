@@ -1,1 +1,45 @@
-{"users": {"1": {"id": "one@mci.edu", "name": "User One", "creation_date": "{TinyDateTime}:2026-01-20T10:52:22.188705", "last_update": "{TinyDateTime}:2026-01-20T10:52:22.188830"}, "3": {"id": "three@mci.edu", "name": "User Three", "creation_date": "{TinyDateTime}:2026-01-20T10:52:22.188727", "last_update": "{TinyDateTime}:2026-01-20T10:52:22.193223"}, "4": {"id": "User Four", "name": "four@mci.edu", "creation_date": "{TinyDateTime}:2026-01-20T10:52:22.195782", "last_update": "{TinyDateTime}:2026-01-20T10:52:22.195863"}, "5": {"id": "testmail@mci", "creation_date": "{TinyDateTime}:2026-01-23T11:40:34.792472", "last_update": "{TinyDateTime}:2026-01-23T11:40:34.792770", "name": "Testnutzer_1"}}, "devices": {"4": {"id": "Test_1", "creation_date": "{TinyDateTime}:2026-01-23T11:29:53.886579", "last_update": "{TinyDateTime}:2026-01-23T11:29:53.886897", "managed_by_user_id": "three@mci.edu", "is_active": true, "end_of_life": "{TinyDate}:2026-01-23"}, "5": {"id": "test_1.1", "creation_date": "{TinyDateTime}:2026-01-23T11:41:44.171890", "last_update": "{TinyDateTime}:2026-01-23T11:41:44.172740", "managed_by_user_id": "testmail@mci", "is_active": true, "end_of_life": "{TinyDate}:2026-01-23"}}, "reservations": {"1": {"id": "two@mci.edu_Device2_2021-01-01 00:00:00", "creation_date": "{TinyDateTime}:2025-01-23T16:00:56.452684", "last_update": "{TinyDateTime}:2025-01-23T16:00:56.452684", "user_id": "two@mci.edu", "device_id": "Device2", "start_date": "{TinyDateTime}:2021-01-01T00:00:00", "end_date": "{TinyDateTime}:2021-01-02T00:00:00"}, "2": {"id": "one@mci.edu_Device2_2021-02-01 00:00:00", "creation_date": "{TinyDateTime}:2025-01-23T16:01:53.523808", "last_update": "{TinyDateTime}:2025-01-23T16:01:53.523808", "user_id": "one@mci.edu", "device_id": "Device2", "start_date": "{TinyDateTime}:2021-02-01T00:00:00", "end_date": "{TinyDateTime}:2021-02-02T00:00:00"}, "3": {"id": "one@mci.edu_Device1_2021-01-01 00:00:00", "creation_date": "{TinyDateTime}:2026-01-20T10:52:30.171074", "last_update": "{TinyDateTime}:2026-01-20T10:52:30.171278", "user_id": "one@mci.edu", "device_id": "Device1", "start_date": "2021-01-01 00:00:00", "end_date": "2021-01-02 00:00:00"}, "4": {"id": "one@mci.edu_Device2_2021-01-01 00:00:00", "creation_date": "{TinyDateTime}:2026-01-20T10:52:30.171110", "last_update": "{TinyDateTime}:2026-01-20T10:52:30.175749", "user_id": "one@mci.edu", "device_id": "Device2", "start_date": "2021-01-01 00:00:00", "end_date": "2021-01-02 00:00:00"}, "5": {"id": "two@mci.edu_Device2_2021-01-02 00:00:00", "creation_date": "{TinyDateTime}:2026-01-20T10:52:30.171114", "last_update": "{TinyDateTime}:2026-01-20T10:52:30.178385", "user_id": "two@mci.edu", "device_id": "Device2", "start_date": "2021-01-02 00:00:00", "end_date": "2021-01-03 00:00:00"}}}
+{
+    "users": {
+        "1": {
+            "id": "testmail@mci.edu",
+            "creation_date": "{TinyDateTime}:2026-01-28T15:21:49.676811",
+            "last_update": "{TinyDateTime}:2026-01-28T15:21:49.678495",
+            "name": "Test_1"
+        },
+        "2": {
+            "id": "testmail2@mci.edu",
+            "creation_date": "{TinyDateTime}:2026-01-28T15:22:20.707422",
+            "last_update": "{TinyDateTime}:2026-01-28T15:22:20.707793",
+            "name": "Test_2"
+        }
+    },
+    "devices": {
+        "1": {
+            "id": "Laptop 1",
+            "creation_date": "{TinyDateTime}:2026-01-28T15:22:34.049625",
+            "last_update": "{TinyDateTime}:2026-01-28T15:22:34.049985",
+            "managed_by_user_id": "testmail@mci.edu",
+            "is_active": true,
+            "end_of_life": "{TinyDate}:2026-01-28"
+        },
+        "2": {
+            "id": "PC 1",
+            "creation_date": "{TinyDateTime}:2026-01-28T15:22:44.046502",
+            "last_update": "{TinyDateTime}:2026-01-28T15:22:44.046757",
+            "managed_by_user_id": "testmail@mci.edu",
+            "is_active": true,
+            "end_of_life": "{TinyDate}:2026-01-28"
+        }
+    },
+    "reservations": {
+        "1": {
+            "id": "PC 1-2026-01-28",
+            "creation_date": "{TinyDateTime}:2026-01-28T15:22:55.776453",
+            "last_update": "{TinyDateTime}:2026-01-28T15:22:55.776666",
+            "user_id": "testmail2@mci.edu",
+            "device_id": "PC 1",
+            "start_date": "{TinyDate}:2026-01-28",
+            "end_date": "{TinyDate}:2026-01-28"
+        }
+    }
+}

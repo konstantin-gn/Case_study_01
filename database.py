@@ -1,35 +1,65 @@
-from tinydb import TinyDB, Query
+import os
+from tinydb import TinyDB
+from tinydb.table import Table
+from tinydb.storages import JSONStorage
+from datetime import datetime, date, time
+from tinydb_serialization import Serializer, SerializationMiddleware
+from tinydb_serialization.serializers import DateTimeSerializer
 
-db = TinyDB('db.json')
+class DatabaseConnector:
+    """
+    Usage: DatabaseConnector().get_table(<table_name>)
+    The information about the actual database file path and the serializer objects has been abstracted away into this class
+    """
+    # Turns the class into a naive singleton
+    # --> not thread safe and doesn't handle inheritance particularly well
+    __instance = None
+    def __new__(cls):
+        if cls.__instance is None:
+            cls.__instance = super().__new__(cls)
+            cls.__instance.path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database.json')
 
-# Geräteverwaltung
-def safe_device(name, status, description):
-    db.insert({'table': "device", 'name': name, 'status': status, 'description': description})
+        return cls.__instance
+    
+    def get_table(self, table_name: str) -> Table:
+        return TinyDB(self.__instance.path, storage=serializer).table(table_name)
 
-def read_table(table):
-    Data = Query()
-    return db.search(Data.table == table)
+#%%
 
-def get_device_by_doc_id(doc_id: int):
-    return db.get(doc_id=doc_id)
+class DateSerializer(Serializer):
+    # The class this serializer handles --> must be date instead of datetime.date
+    OBJ_CLASS = date
 
-def update_device_by_doc_id(doc_id: int, name: str, status: str, description: str):
-    db.update(
-        {'name': name, 'status': status, 'description': description},
-        doc_ids=[doc_id]
-    )
+    def encode(self, obj):
+        return obj.isoformat()
 
-def delete_device_by_doc_id(doc_id: int):
-    db.remove(doc_ids=[doc_id])
+    def decode(self, s):
+        return date.fromisoformat(s)
 
-# Nutzerverwaltung
-def save_user(name: str, role: str):
-    db.insert({"table": "user", "name": name, "role": role})
+class TimeSerializer(Serializer):
+    # The class this serializer handles --> must be time instead of datetime.time
+    OBJ_CLASS = time
+    
+    def encode(self, obj):
+        return obj.isoformat()
 
-def read_users():
-    Data = Query()
-    return db.search(Data.table == "user")
+    def decode(self, s):
+        return time.fromisoformat(s)
 
-def delete_user_by_doc_id(doc_id: int):
-    db.remove(doc_ids=[doc_id])
+serializer = SerializationMiddleware(JSONStorage)
+serializer.register_serializer(DateTimeSerializer(), 'TinyDateTime')
+serializer.register_serializer(DateSerializer(), 'TinyDate')
+serializer.register_serializer(TimeSerializer(), 'TinyTime')
 
+
+#%%
+
+if __name__ == "__main__":
+    db_connector = DatabaseConnector().get_table('devices')
+    result = db_connector.all()
+
+    if result:
+        result = [x["device_name"] for x in result]
+    
+    print(result)
+    
