@@ -41,5 +41,6 @@
             "start_date": "{TinyDate}:2026-01-28",
             "end_date": "{TinyDate}:2026-01-28"
         }
-    }
+    },
+    "maintenances": {}
 }

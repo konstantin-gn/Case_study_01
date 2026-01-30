@@ -2,6 +2,7 @@ import streamlit as st
 from users import User
 from devices import Device
 from reservation import Reservation
+from maintenance import Maintenance
 
 
 
@@ -34,7 +35,7 @@ page = st.sidebar.radio(
         "Geräteverwaltung",
         "Nutzerverwaltung",
         "Reservierungen",
-        "Wartung (Mockup)",
+        "Wartung",
     ],
 )
 
@@ -227,6 +228,8 @@ elif page == "Nutzerverwaltung":
 # ================= RESERVIERUNGEN =================
 if "reservation_mode" not in st.session_state:
     st.session_state.reservation_mode = None  # None | "add" | "delete"
+if "maintenance_mode" not in st.session_state:
+    st.session_state.maintenance_mode = None  # None | "add" | "delete"
 
 elif page == "Reservierungen":
     st.title("Reservierungen")
@@ -322,11 +325,90 @@ elif page == "Reservierungen":
             st.error("Bitte bestätige das Löschen.")
 
 
-# ================= WARTUNG MOCKUP =================
-elif page == "Wartung (Mockup)":
-    st.title("Wartung")
-    st.warning("Wartungsverwaltung ist noch nicht implementiert.")
 
-    st.selectbox("Gerät auswählen", ["Laptop", "Tablet", "Beamer"])
-    st.text_area("Wartungsbeschreibung")
-    st.button("Wartung eintragen (Mockup)")
+# ================= WARTUNG =================
+if page == "Wartung":
+    st.title("Wartung")
+
+    maintenances = Maintenance.find_all()
+    devices = Device.find_all()
+
+    st.subheader("Eingetragene Wartungen")
+
+    if maintenances:
+        st.table({
+            "Gerät": [m.device_id for m in maintenances],
+            "Beschreibung": [m.description for m in maintenances],
+            "Startdatum": [m.start_date for m in maintenances],
+            "Enddatum": [m.end_date for m in maintenances],
+        })
+    else:
+        st.info("Noch keine Wartungen vorhanden.")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("Wartung anlegen"):
+            st.session_state.maintenance_mode = "add"
+            st.rerun()
+
+    with col2:
+        if st.button("Wartung löschen"):
+            st.session_state.maintenance_mode = "delete"
+            st.rerun()
+
+    st.divider()
+
+    # ================= WARTUNG ANLEGEN =================
+    if st.session_state.maintenance_mode == "add":
+        st.subheader("Neue Wartung anlegen")
+
+        selected_device = st.selectbox(
+            "Gerät auswählen",
+            options=devices,
+            format_func=lambda d: d.id
+        )
+
+        description = st.text_area("Wartungsbeschreibung")
+        start_date = st.date_input("Startdatum")
+        end_date = st.date_input("Enddatum")
+
+        if st.button("Wartung speichern"):
+            if start_date > end_date:
+                st.error("Enddatum muss nach dem Startdatum liegen.")
+            elif not description.strip():
+                st.error("Bitte eine Wartungsbeschreibung eingeben.")
+            else:
+                maintenance = Maintenance(
+                    id=f"{selected_device.id}-{start_date}",
+                    device_id=selected_device.id,
+                    description=description.strip(),
+                    start_date=start_date,
+                    end_date=end_date,
+                )
+                maintenance.store_data()
+
+                st.success("Wartung wurde angelegt.")
+                st.session_state.maintenance_mode = None
+                st.rerun()
+
+    # ================= WARTUNG LÖSCHEN =================
+    elif st.session_state.maintenance_mode == "delete":
+        st.subheader("Wartung löschen")
+
+        selected_maintenance = st.selectbox(
+            "Wartung auswählen",
+            options=maintenances,
+            format_func=lambda m: f"{m.device_id} | {m.start_date} – {m.end_date}"
+        )
+
+        confirm = st.checkbox("Ich bestätige das Löschen")
+
+        if st.button("Wartung endgültig löschen"):
+            if confirm:
+                selected_maintenance.delete()
+                st.success("Wartung gelöscht.")
+                st.session_state.maintenance_mode = None
+                st.rerun()
+            else:
+                st.error("Bitte bestätige das Löschen.")
